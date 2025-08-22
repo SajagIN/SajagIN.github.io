@@ -72,9 +72,9 @@ I'm **Sajag Kamthan**, a passionate Full Stack Developer from India, constantly 
 - [Portfolio Website](https://SajagIN.thedev.id)
 - [GitHub](https://github.com/sajagin)
 - [LinkedIn](https://linkedin.com/in/sajagin)
+- [Instagram](https://instagram.com/sajag_in)
 - [LeetCode](https://leetcode.com/sajagin)
 - [Twitter/X](https://twitter.com/sajagin)
-<!-- - [Instagram](https://instagram.com/) -->
 
 ---
 
