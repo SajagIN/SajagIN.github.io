@@ -1,26 +1,39 @@
 document.addEventListener("DOMContentLoaded", function() {
     const isMobile = window.innerWidth <= 768;
+    const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     const content = document.querySelector('.content');
     let activeCanvasEmojis = []; // Global array for emojis to be drawn on canvas
 
-    
+    const INTERACTIVE_SELECTOR = 'input, textarea, select, button, a, label, [role="button"], [contenteditable="true"]';
+
+    // Shared references for canvas animations
+    let parallaxCanvas = null;
+    let parallaxCtx = null;
+    let parallaxLayers = [];
+    let parallaxRafId = null;
+
     function initParallax() {
         if (isMobile || !content) return;
 
         const canvas = document.createElement('canvas');
         canvas.className = 'parallax-canvas';
         document.body.appendChild(canvas);
-        const ctx = canvas.getContext('2d'); // Ensure ctx is accessible within drawParallax
+        const ctx = canvas.getContext('2d');
+
+        parallaxCanvas = canvas;
+        parallaxCtx = ctx;
 
         const layers = [
-            { src: 'assets/city_parallax/1.avif', speed: 0.1, img: new Image() },
-            { src: 'assets/city_parallax/2.avif', speed: 0.2, img: new Image() },
-            { src: 'assets/city_parallax/3.avif', speed: 0.3, img: new Image() },
-            // Add more layers here if needed for emoji depth
-            { src: 'assets/city_parallax/4.avif', speed: 0.4, img: new Image() },
-            { src: 'assets/city_parallax/5.avif', speed: 0.5, img: new Image() },
-            { src: 'assets/city_parallax/6.avif', speed: 0.6, img: new Image() }
+            { src: 'assets/city_parallax/1.avif', speed: 0.10, img: new Image() },
+            { src: 'assets/city_parallax/2.avif', speed: 0.18, img: new Image() },
+            { src: 'assets/city_parallax/3.avif', speed: 0.26, img: new Image() },
+            { src: 'assets/city_parallax/4.avif', speed: 0.34, img: new Image() },
+            { src: 'assets/city_parallax/5.avif', speed: 0.42, img: new Image() },
+            { src: 'assets/city_parallax/6.avif', speed: 0.52, img: new Image() }
         ];
+
+        parallaxLayers = layers;
 
         let loadedImages = 0;
         layers.forEach(layer => {
@@ -28,7 +41,8 @@ document.addEventListener("DOMContentLoaded", function() {
             layer.img.onload = () => {
                 loadedImages++;
                 if (loadedImages === layers.length) {
-                    resizeCanvas(); 
+                    resizeCanvas();
+                    startParallaxLoop();
                 }
             };
         });
@@ -36,105 +50,153 @@ document.addEventListener("DOMContentLoaded", function() {
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            drawParallax(); 
         }
 
-        // This is the main drawing loop for both parallax and emojis
-        function drawParallax() {
-            if (!ctx) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const scrollX = content.scrollLeft;
-            const now = Date.now(); // Get current time once per frame
+        function startParallaxLoop() {
+            if (prefersReducedMotion) {
+                // Still draw once for a static background
+                drawParallax();
+                return;
+            }
 
-            layers.forEach(layer => {
+            if (parallaxRafId) return;
+            const loop = () => {
+                drawParallax();
+                parallaxRafId = requestAnimationFrame(loop);
+            };
+            parallaxRafId = requestAnimationFrame(loop);
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    if (parallaxRafId) cancelAnimationFrame(parallaxRafId);
+                    parallaxRafId = null;
+                } else {
+                    if (!parallaxRafId && !prefersReducedMotion) {
+                        parallaxRafId = requestAnimationFrame(loop);
+                    }
+                }
+            });
+        }
+
+        // Main drawing loop for both parallax and emojis
+        function drawParallax() {
+            if (!ctx || !canvas) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const now = Date.now();
+            const t = now / 1000;
+            const scrollX = content.scrollLeft;
+
+            // Subtle autonomous drift so the background feels alive even when not scrolling
+            const driftPx = prefersReducedMotion ? 0 : (t * 8);
+            const effectiveScrollX = scrollX + driftPx;
+
+            // 1) Update & bucket emojis (so we can render them between layers)
+            const layerCount = layers.length;
+            const buckets = Array.from({ length: layerCount + 1 }, () => []);
+            const nextEmojis = [];
+
+            for (const emoji of activeCanvasEmojis) {
+                if (now < emoji.animationStartTime) {
+                    nextEmojis.push(emoji);
+                    // Not started yet; keep it (no bucket)
+                    continue;
+                }
+
+                const elapsedTime = now - emoji.animationStartTime;
+                if (elapsedTime > emoji.animationDuration) {
+                    continue;
+                }
+
+                const progress = elapsedTime / emoji.animationDuration;
+                emoji.currentY = emoji.startY - (progress * (canvas.height + emoji.size * 2));
+                emoji.currentX = emoji.baseX - (effectiveScrollX * emoji.parallaxFactor);
+                emoji.opacity = Math.sin(progress * Math.PI);
+                emoji.currentRotation = emoji.initialRotation + progress * (emoji.targetRotation - emoji.initialRotation);
+
+                nextEmojis.push(emoji);
+
+                const slot = Number.isInteger(emoji.layerSlot) ? emoji.layerSlot : layerCount;
+                const clampedSlot = Math.max(0, Math.min(slot, layerCount));
+                buckets[clampedSlot].push(emoji);
+            }
+
+            activeCanvasEmojis = nextEmojis;
+
+            function drawEmojiBucket(bucket) {
+                for (const emoji of bucket) {
+                    ctx.save();
+                    ctx.font = `${emoji.size}px Syne, Segoe UI Emoji, Noto Color Emoji, Arial, sans-serif`;
+                    ctx.globalAlpha = emoji.opacity;
+                    ctx.translate(emoji.currentX, emoji.currentY);
+                    ctx.rotate(emoji.currentRotation * Math.PI / 180);
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(emoji.char, 0, 0);
+                    ctx.restore();
+                }
+            }
+
+            // 2) Draw layers, inserting emoji buckets between them
+            for (let i = 0; i < layers.length; i++) {
+                const layer = layers[i];
                 const img = layer.img;
-                if (!img.complete || img.naturalWidth === 0) return; 
+                if (!img.complete || img.naturalWidth === 0) continue;
 
                 const imgW = img.width;
                 const imgH = img.height;
                 const canvasH = canvas.height;
-                const drawH = canvasH; 
-                const drawW = imgW * (drawH / imgH); 
+                const drawH = canvasH;
+                const drawW = imgW * (drawH / imgH);
 
-                let xPosition = (-scrollX * layer.speed) % drawW;
+                let xPosition = (-(effectiveScrollX) * layer.speed) % drawW;
+                if (xPosition > 0) xPosition -= drawW;
 
-                
-                if (xPosition > 0) {
-                    xPosition -= drawW;
-                }
-
-                const yPosition = (canvasH - drawH) / 2; 
-
+                const yPosition = (canvasH - drawH) / 2;
                 for (let currentX = xPosition; currentX < canvas.width; currentX += drawW) {
                     ctx.drawImage(img, currentX, yPosition, drawW, drawH);
                 }
 
-                // --- Draw Emojis in front of this layer (Optional: requires assigning layer index to emojis) ---
-                // If you want emojis between layers, you'd add logic here to filter
-                // activeCanvasEmojis based on a 'targetLayerIndex' property you add
-                // to the emoji objects in animateEmojiFlyUp.
-            });
+                // Emojis for this "gap" (after layer i, before layer i+1)
+                drawEmojiBucket(buckets[i]);
+            }
 
-            // --- Draw Emojis on Canvas (currently drawn on top of all layers) ---
-            // Filter out finished emojis and draw active ones
-            activeCanvasEmojis = activeCanvasEmojis.filter(emoji => {
-                // Check if animation has started
-                if (now < emoji.animationStartTime) {
-                    // If not started, just keep it in the array for now
-                    return true; 
-                }
-
-                const elapsedTime = now - emoji.animationStartTime;
-                // Check if animation is finished
-                if (elapsedTime > emoji.animationDuration) {
-                    return false; // Remove emoji from array
-                }
-
-                const progress = elapsedTime / emoji.animationDuration;
-
-                // Update properties based on animation progress
-                emoji.currentY = emoji.startY - (progress * (canvas.height + emoji.size * 2)); // Fly upwards
-                emoji.currentX = (emoji.startXPercent / 100 * canvas.width) - (scrollX * emoji.parallaxFactor);
-                emoji.opacity = Math.sin(progress * Math.PI); // Fade in and out (0 to 1 to 0)
-                emoji.currentRotation = emoji.initialRotation + progress * (emoji.targetRotation - emoji.initialRotation);
-
-                // Draw the emoji
-                ctx.save(); // Save current canvas state
-                ctx.font = `${emoji.size}px Syne, Segoe UI Emoji, Noto Color Emoji, Arial, sans-serif`; // Use Syne + emoji fallbacks
-                ctx.globalAlpha = emoji.opacity; // Apply opacity
-                ctx.translate(emoji.currentX, emoji.currentY); // Move origin to emoji center
-                ctx.rotate(emoji.currentRotation * Math.PI / 180); // Apply rotation (convert degrees to radians)
-                ctx.textAlign = 'center'; // Center text around the origin
-                ctx.textBaseline = 'middle'; // Center text vertically around the origin
-                ctx.fillText(emoji.char, 0, 0); // Draw the emoji at the origin
-                ctx.restore(); // Restore canvas state
-                return true; // Keep emoji in array if animation is ongoing
-            });
+            // Emojis that should be in front of all layers
+            drawEmojiBucket(buckets[layerCount]);
         }
 
-        window.addEventListener('resize', resizeCanvas);
-        content.addEventListener('scroll', () => {
-            window.requestAnimationFrame(drawParallax); 
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            if (prefersReducedMotion) drawParallax();
         });
 
-        window.addEventListener('resize', resizeCanvas); // Ensure resizeCanvas calls drawParallax
-        
+        // Draw immediately if already loaded (cache)
         if (loadedImages === layers.length) {
             resizeCanvas();
+            startParallaxLoop();
         }
     }
 
     
     function initContentScrolling() {
-        if (isMobile || !content) return; 
+        if (isMobile || !content) return;
 
         let isDragging = false;
         let startX, scrollLeftInitial;
         const DRAG_MULTIPLIER = 2;
 
         function handleDragStart(e) {
+            // Only left-click drag on desktop
+            if (!e.touches && e.button !== 0) return;
+
+            // Don't hijack clicks on interactive controls (especially the contact form)
+            // so inputs can be focused and clicked normally.
+            if (e.target && e.target.closest && e.target.closest(INTERACTIVE_SELECTOR)) return;
+            if (e.target && e.target.closest && e.target.closest('#contact')) return;
+
             isDragging = true;
-            
+            content.classList.add('is-dragging');
 
             const pageX = e.touches ? e.touches[0].pageX : e.pageX;
             startX = pageX - content.offsetLeft;
@@ -145,7 +207,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 document.addEventListener('touchend', handleDragEnd);
                 document.addEventListener('touchcancel', handleDragEnd);
             } else {
-                
                 e.preventDefault();
                 document.addEventListener('mousemove', handleDragMove);
                 document.addEventListener('mouseup', handleDragEnd);
@@ -154,7 +215,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         function handleDragMove(e) {
             if (!isDragging) return;
-            e.preventDefault(); 
+            e.preventDefault();
 
             const pageX = e.touches ? e.touches[0].pageX : e.pageX;
             const x = pageX - content.offsetLeft;
@@ -165,7 +226,7 @@ document.addEventListener("DOMContentLoaded", function() {
         function handleDragEnd() {
             if (!isDragging) return;
             isDragging = false;
-            
+            content.classList.remove('is-dragging');
 
             document.removeEventListener('touchmove', handleDragMove);
             document.removeEventListener('touchend', handleDragEnd);
@@ -261,24 +322,28 @@ document.addEventListener("DOMContentLoaded", function() {
     
 
     function initIframeModal() {
-        // const toggleButton = document.getElementById('angryEyesButton'); // Functionality moved to initEmojiHover
-        const projectsButton = document.getElementById('myProjectsBtn'); 
+        const projectsButton = document.getElementById('myProjectsBtn');
         const blackOverlay = document.getElementById('iframeBlackOverlay');
         const iframeContainer = document.getElementById('iframeModalContainer');
-        const websiteIframe = document.getElementById('websiteIframe'); 
+        const closeBtn = document.getElementById('iframeModalCloseBtn');
+        const websiteIframe = document.getElementById('websiteIframe');
 
-        // Removed toggleButton from this check
-        if (!projectsButton || !blackOverlay || !iframeContainer || !websiteIframe || !mainContentElement || !mainSiteOverlayElement) {
+        if (!projectsButton || !blackOverlay || !iframeContainer || !websiteIframe || !mainContentElement || !mainSiteOverlayElement || !closeBtn) {
             console.warn('Iframe modal elements for projects or core components not found.');
             return;
         }
 
-        
+        let lastFocusedElement = null;
+
         function openModal(iframeSrc) {
-            if (websiteIframe) websiteIframe.src = iframeSrc;
-            
+            lastFocusedElement = document.activeElement;
+
+            websiteIframe.src = iframeSrc;
+
             blackOverlay.style.display = 'block';
             iframeContainer.style.display = 'block';
+            iframeContainer.setAttribute('aria-hidden', 'false');
+
             void blackOverlay.offsetWidth;
             void iframeContainer.offsetWidth;
 
@@ -286,39 +351,56 @@ document.addEventListener("DOMContentLoaded", function() {
             iframeContainer.classList.add('visible');
             document.body.classList.add('iframe-modal-open');
 
+            // Hide page content behind the dialog after the fade-in
             setTimeout(() => {
                 if (iframeContainer.classList.contains('visible')) {
-                    if (mainContentElement) mainContentElement.style.display = 'none';
-                    if (mainSiteOverlayElement) mainSiteOverlayElement.style.display = 'none';
+                    mainContentElement.style.display = 'none';
+                    mainSiteOverlayElement.style.display = 'none';
+                    closeBtn.focus();
                 }
-            }, 1500); 
+            }, 350);
         }
 
-        
         function closeModal() {
-            if (mainContentElement) mainContentElement.style.display = isMobile ? 'block' : 'flex';
-            if (mainSiteOverlayElement) mainSiteOverlayElement.style.display = 'block';
+            // Show page content immediately so focus restoration is visible
+            mainContentElement.style.display = isMobile ? 'block' : 'flex';
+            mainSiteOverlayElement.style.display = 'block';
 
             iframeContainer.classList.remove('visible');
             blackOverlay.classList.remove('visible');
             document.body.classList.remove('iframe-modal-open');
+            iframeContainer.setAttribute('aria-hidden', 'true');
 
             setTimeout(() => {
                 if (!iframeContainer.classList.contains('visible')) {
                     iframeContainer.style.display = 'none';
                     blackOverlay.style.display = 'none';
+                    // Stop iframe playback/network when closed
+                    websiteIframe.src = 'about:blank';
+
+                    const focusTarget = lastFocusedElement || projectsButton;
+                    if (focusTarget && typeof focusTarget.focus === 'function') {
+                        focusTarget.focus();
+                    }
                 }
-            }, 1800); 
+            }, 650);
         }
 
-        // Event listener for angryEyesButton (toggleButton) removed, its new functionality is in initEmojiHover
-        projectsButton.addEventListener('click', (event) => {
-            event.preventDefault(); 
+        projectsButton.addEventListener('click', () => {
             const isVisible = iframeContainer.classList.contains('visible');
             if (isVisible) {
                 closeModal();
             } else {
                 openModal('https://sajagin.thedev.id/ShowCase');
+            }
+        });
+
+        closeBtn.addEventListener('click', closeModal);
+        blackOverlay.addEventListener('click', closeModal);
+
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && iframeContainer.classList.contains('visible')) {
+                closeModal();
             }
         });
     }
@@ -329,7 +411,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         const angryEyesButton = document.getElementById('angryEyesButton');
         if (!angryEyesButton) {
-            console.warn('Emoji hover button "angryEyesButton" not found.');
+            console.warn('Emoji button "angryEyesButton" not found.');
             return;
         }
 
@@ -339,101 +421,178 @@ document.addEventListener("DOMContentLoaded", function() {
 
         // Create the emoji panel
         const emojiPanel = document.createElement('div');
-        // emojiPanel.id = 'emojiPanel'; // ID might not be needed if styled as child
-        emojiPanel.className = 'emoji-panel'; // This will be a child of angryEyesButton
-        
-        const emojis = ['💩', '😊', '🎈', '🎉', '👍'];
+        emojiPanel.className = 'emoji-panel';
+
+        const emojis = ['💩', '😊', '🎈', '🎉', '👍', '✨', '🔥', '💙'];
         emojis.forEach(emojiChar => {
             const emojiSpan = document.createElement('span');
             emojiSpan.textContent = emojiChar;
-            emojiSpan.style.cursor = 'pointer'; // Indicate emojis are clickable
-            emojiSpan.addEventListener('click', () => animateEmojiFlyUp(emojiChar));
+            emojiSpan.setAttribute('role', 'button');
+            emojiSpan.setAttribute('tabindex', '0');
+            emojiSpan.setAttribute('aria-label', `Send ${emojiChar} emojis`);
+
+            const fire = () => animateEmojiFlyUp(emojiChar, { count: 8 });
+            emojiSpan.addEventListener('click', fire);
+            emojiSpan.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    fire();
+                }
+            });
+
             emojiPanel.appendChild(emojiSpan);
         });
 
-        // Create a wrapper for the original icon
+        // Icon container (click toggles auto emoji mode)
         const iconContainer = document.createElement('span');
         iconContainer.className = 'button-icon-container';
         iconContainer.innerHTML = originalIconHTML;
+        iconContainer.setAttribute('role', 'button');
+        iconContainer.setAttribute('tabindex', '0');
+        iconContainer.setAttribute('aria-label', 'Toggle automatic background emojis');
 
-        // Append new structure: emoji panel first (left), then icon container (right)
         angryEyesButton.appendChild(emojiPanel);
         angryEyesButton.appendChild(iconContainer);
 
+        // Hover expands panel; click toggles auto mode
         let panelTimeout;
-
         function openPanel() {
             clearTimeout(panelTimeout);
-            // Add class to button for shape change and panel reveal (CSS handles animation)
             angryEyesButton.classList.add('expanded-emoji-button');
         }
-
         function closePanel() {
             panelTimeout = setTimeout(() => {
                 angryEyesButton.classList.remove('expanded-emoji-button');
-            }, 100); // Small delay to allow mouse to move to panel before closing
+            }, 120);
         }
 
         angryEyesButton.addEventListener('mouseenter', openPanel);
         angryEyesButton.addEventListener('mouseleave', closePanel);
-
-        // Keep panel open if mouse enters the emoji panel itself (which is now inside the button)
-        emojiPanel.addEventListener('mouseenter', () => {
-            clearTimeout(panelTimeout); // Keep panel open if mouse enters panel
-        });
+        emojiPanel.addEventListener('mouseenter', () => clearTimeout(panelTimeout));
         emojiPanel.addEventListener('mouseleave', closePanel);
+
+        let autoEmojiEnabled = !prefersReducedMotion;
+        let autoEmojiIntervalId = null;
+
+        function setAutoEmojiEnabled(enabled) {
+            autoEmojiEnabled = enabled;
+            angryEyesButton.classList.toggle('auto-emoji-on', autoEmojiEnabled);
+            angryEyesButton.setAttribute('aria-pressed', autoEmojiEnabled ? 'true' : 'false');
+
+            if (autoEmojiIntervalId) {
+                clearInterval(autoEmojiIntervalId);
+                autoEmojiIntervalId = null;
+            }
+
+            if (!autoEmojiEnabled) return;
+
+            autoEmojiIntervalId = setInterval(() => {
+                // Don’t spawn while modal is open (keeps it calmer)
+                if (document.body.classList.contains('iframe-modal-open')) return;
+
+                const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+                animateEmojiFlyUp(randomEmoji, { count: 4 + Math.floor(Math.random() * 6) });
+            }, 900);
+        }
+
+        const toggleAuto = () => setAutoEmojiEnabled(!autoEmojiEnabled);
+        iconContainer.addEventListener('click', toggleAuto);
+        iconContainer.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleAuto();
+            }
+        });
+
+        // Start in auto mode by default (desktop)
+        setAutoEmojiEnabled(autoEmojiEnabled);
     }
 
-    function animateEmojiFlyUp(emojiChar) {
+    function animateEmojiFlyUp(emojiChar, options = {}) {
         const isMobile = window.innerWidth <= 768;
-        if (isMobile) return; // Optional: disable on mobile for performance
+        if (isMobile) return;
+        if (prefersReducedMotion) return;
+        if (!content) return;
 
-        // Ensure canvas is available before trying to animate on it
-        const canvas = document.querySelector('.parallax-canvas');
+        // Prefer the cached canvas reference if available
+        const canvas = parallaxCanvas || document.querySelector('.parallax-canvas');
         if (!canvas) {
             console.warn("Parallax canvas not found for emoji animation.");
             return;
         }
-        const canvasHeight = canvas.height;
 
-        const numEmojis = 10;
-        // Match these speeds to your background layers or make them slightly different
-        // to appear between, in front of, or behind specific layers.
-        // For simplicity, we'll make them generally fast to appear "in front" of most.
-        const emojiParallaxFactors = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]; 
+        const now = Date.now();
+        const t = now / 1000;
+        const driftPx = prefersReducedMotion ? 0 : (t * 8);
+        const effectiveScrollXNow = content.scrollLeft + driftPx;
 
-        for (let i = 0; i < numEmojis; i++) {
-            // Randomize properties for variety
-            const startXPercent = Math.random() * 90 + 5; // % across the screen (5% to 95%)
-            const randomSize = 20 + Math.random() * 30; // px (20px to 50px)
-            const animationDurationInMs = (3 + Math.random() * 4) * 1000; // Convert seconds to milliseconds
-            const animationDelay = (Math.random() * 1.5) * 1000; // milliseconds (0s to 1.5s)
-            const initialRotation = (Math.random() - 0.5) * 20; // Initial small rotation
-            const targetRotation = initialRotation + (Math.random() - 0.5) * 180; // Target rotation change
-            const chosenParallaxFactor = emojiParallaxFactors[Math.floor(Math.random() * emojiParallaxFactors.length)];
+        const canvasW = canvas.width || window.innerWidth;
+        const canvasH = canvas.height || window.innerHeight;
+        const count = typeof options.count === 'number' ? options.count : 10;
+
+        const layerCount = (parallaxLayers && parallaxLayers.length) ? parallaxLayers.length : 0;
+
+        for (let i = 0; i < count; i++) {
+            // Random layer "gap" to place emojis between layers.
+            // slot = 0..layerCount means:
+            // - 0 is between layer 0 and layer 1 (after drawing layer 0)
+            // - layerCount is in front of all layers
+            const layerSlot = layerCount ? Math.floor(Math.random() * (layerCount + 1)) : 0;
+
+            // Parallax factor derived from neighbouring layer speeds (feels like true depth)
+            let parallaxFactor = 0.35;
+            if (layerCount) {
+                const lower = parallaxLayers[Math.min(layerSlot, layerCount - 1)].speed;
+                const upper = layerSlot < layerCount
+                    ? parallaxLayers[Math.min(layerSlot + 1, layerCount - 1)].speed
+                    : Math.min(1, lower + 0.25);
+                const min = Math.min(lower, upper);
+                const max = Math.max(lower, upper);
+                parallaxFactor = min + Math.random() * Math.max(0.01, (max - min));
+            }
+
+            // Spawn X in screen-space, then convert to a stable world-space base
+            // so emojis spawn correctly on ANY horizontal page (not just near scrollLeft=0).
+            const xScreen = Math.random() * canvasW;
+            const baseX = (effectiveScrollXNow * parallaxFactor) + xScreen;
+
+            const randomSize = 18 + Math.random() * 34;
+            const animationDurationInMs = (2.6 + Math.random() * 3.6) * 1000;
+            const animationDelay = (Math.random() * 0.9) * 1000;
+            const initialRotation = (Math.random() - 0.5) * 30;
+            const targetRotation = initialRotation + (Math.random() - 0.5) * 260;
+
+            // Start from a band covering mid-to-bottom so it feels like it’s coming from “everywhere”
+            const startY = (canvasH * (0.45 + Math.random() * 0.75)) + randomSize;
 
             activeCanvasEmojis.push({
                 char: emojiChar,
-                startXPercent: startXPercent,
-                startY: canvasHeight + randomSize + (Math.random() * 50), // Start below canvas
-                currentX: 0, // Will be calculated in draw loop
-                currentY: 0, // Will be calculated in draw loop
+                layerSlot,
+                baseX,
+                startY,
+                currentX: 0,
+                currentY: 0,
                 size: randomSize,
                 opacity: 0,
-                initialRotation: initialRotation,
-                targetRotation: targetRotation,
+                initialRotation,
+                targetRotation,
                 currentRotation: initialRotation,
-                parallaxFactor: chosenParallaxFactor,
-                animationStartTime: Date.now() + animationDelay,
+                parallaxFactor,
+                animationStartTime: now + animationDelay,
                 animationDuration: animationDurationInMs,
             });
+        }
+
+        // Hard cap to avoid memory growth during long sessions
+        if (activeCanvasEmojis.length > 500) {
+            activeCanvasEmojis = activeCanvasEmojis.slice(activeCanvasEmojis.length - 500);
         }
     }
 
     // updateFlyingEmojiScroll function is no longer needed as its logic is in drawParallax
 
     function initKeyboardScrolling() {
-        if (isMobile || !content) return; 
+        if (isMobile || !content) return;
         
         let scrollDirection = 0; // -1 for left, 1 for right, 0 for none
         const scrollSpeed = 15; // Pixels per frame. Adjust for desired speed.
@@ -451,26 +610,36 @@ document.addEventListener("DOMContentLoaded", function() {
             animationFrameId = requestAnimationFrame(scrollLoop);
         }
 
+        function isTypingInField() {
+            const el = document.activeElement;
+            if (!el) return false;
+            const tag = (el.tagName || '').toLowerCase();
+            return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable;
+        }
+
         window.addEventListener('keydown', (event) => {
-            
-            if (document.body.classList.contains('iframe-modal-open')) {
-                return;
-            }
+            if (document.body.classList.contains('iframe-modal-open')) return;
+
+            // Don't steal arrow keys from form fields; this is critical for accessibility.
+            if (isTypingInField()) return;
+
             let newDirection = 0;
             if (event.key === 'ArrowLeft') {
                 newDirection = -1;
             } else if (event.key === 'ArrowRight') {
                 newDirection = 1;
             } else {
-                return; 
+                return;
             }
-           if (scrollDirection !== newDirection) {
+
+            if (scrollDirection !== newDirection) {
                 scrollDirection = newDirection;
-                if (!animationFrameId) { // Start loop if not already running
+                if (!animationFrameId) {
                     animationFrameId = requestAnimationFrame(scrollLoop);
                 }
             }
-            event.preventDefault(); // Prevent default browser scroll for arrow keys
+
+            event.preventDefault();
         });
         
         window.addEventListener('keyup', (event) => {
@@ -486,7 +655,7 @@ document.addEventListener("DOMContentLoaded", function() {
     initContentScrolling();
     initMatchBoxHeights();
     initMobileSkillsTabs();
-    initIframeModal(); 
-    initKeyboardScrolling(); 
+    initIframeModal();
+    initKeyboardScrolling();
     initEmojiHover();
  });

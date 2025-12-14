@@ -71,10 +71,11 @@
     </script>     
 </head>
 <body>
-    <div class="overlay"></div>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="overlay" aria-hidden="true"></div>
     
-    <div class="content">
-        <div class="section scroll-hint">
+    <main id="main" class="content" tabindex="-1">
+        <div class="section scroll-hint" aria-hidden="true">
             <h2>Scroll Horizontally <br/> <span class="arrow"><span class="arrow-1">></span><span class="arrow-2">></span></span></h2>
         </div>
         <div class="section home-section">
@@ -85,7 +86,7 @@
                     <p class="smaller-text">Full Stack Developer, constantly exploring new skills—from web and app development to machine learning and game creation.</p>
                 </div>
                 <div class="home-flex-pfp">
-                    <img loading="lazy" decoding="async" src="http://github.com/sajagin.png" alt="Profile Picture of Sajag Kamthan" class="pfp" width="180" height="180" srcset="https://github.com/sajagin.png 180w, https://github.com/sajagin.png 240w" sizes="(max-width: 768px) 180px, 240px" />
+                    <img loading="lazy" decoding="async" src="https://github.com/sajagin.png" alt="Profile Picture of Sajag Kamthan" class="pfp" width="180" height="180" srcset="https://github.com/sajagin.png 180w, https://github.com/sajagin.png 240w" sizes="(max-width: 768px) 180px, 240px" />
                 </div>
             </div>
         </div>
@@ -127,9 +128,9 @@
                             <a href="resume.pdf" download class="about-btn" role="button">
                                 Download Resume <i class="fa-solid fa-download" aria-hidden="true"></i>
                             </a>
-                            <a href="#" id="myProjectsBtn" class="about-btn" role="button">
+                            <button type="button" id="myProjectsBtn" class="about-btn">
                                 My Projects <i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i>
-                            </a>
+                            </button>
                         </div>
                         <div class="about-socials">
                             <a href="https://github.com/sajagin" class="about-social-btn" target="_blank" rel="noopener noreferrer" title="GitHub" aria-label="GitHub Profile">
@@ -153,9 +154,9 @@
             <h2 class="section-main-title">My Skill Set</h2>
             <div class="skills-section">
                 <div class="skills-category-tabs">
-                    <button class="skills-tab-btn active" data-category="advanced">Advanced</button>
-                    <button class="skills-tab-btn" data-category="intermediate">Intermediate</button>
-                    <button class="skills-tab-btn" data-category="beginner">Beginner</button>
+                    <button type="button" class="skills-tab-btn active" data-category="advanced">Advanced</button>
+                    <button type="button" class="skills-tab-btn" data-category="intermediate">Intermediate</button>
+                    <button type="button" class="skills-tab-btn" data-category="beginner">Beginner</button>
                 </div>
                 <div class="skills-categories-wrapper">
                     <div class="skills-category advanced" id="skills-advanced">
@@ -228,30 +229,32 @@
                     <form action="https://formsubmit.co/web.codewhite@gmail.com" method="POST">
                         <input type="hidden" name="_captcha" value="false">
                         <input type="hidden" name="_template" value="table">
+
                         <label for="email">Email</label>
-                        <input type="email" id="email" name="email" required placeholder="Your email">
+                        <input type="email" id="email" name="email" autocomplete="email" required placeholder="you@example.com">
                         
                         <label for="subject">Subject</label>
-                        <input type="text" id="subject" name="subject" required placeholder="Subject">
+                        <input type="text" id="subject" name="subject" autocomplete="off" required placeholder="What’s this about?">
                         
                         <label for="message">Message</label>
-                        <textarea id="message" name="message" rows="5" required placeholder="Your message"></textarea>
+                        <textarea id="message" name="message" rows="5" autocomplete="off" required placeholder="Write your message…"></textarea>
                         
-                        <button type="submit">Send</button>
+                        <button type="submit">Send Message</button>
                     </form>
                 </div>      
             </section>
         </div>
-    </div>
-        <!-- Angry Eyes Toggle Button -->
-        <button id="angryEyesButton" class="angry-eyes-toggle-btn" aria-label="Toggle Angry Eyes" title="Toggle Angry Eyes">
-        &#x1F440; <!-- Eyes emoji -->
+    </main>
+        <!-- Angry Eyes / Emoji Button -->
+        <button type="button" id="angryEyesButton" class="angry-eyes-toggle-btn" aria-label="Emoji mode" aria-pressed="false" title="Emoji mode">
+        &#x1F440;
     </button>
 
     <!-- Fullscreen Iframe Modal -->
-    <div id="iframeBlackOverlay" class="iframe-black-overlay"></div>
-    <div id="iframeModalContainer" class="iframe-modal-container">
-        <iframe id="websiteIframe" src="./Eyes" title="Embedded Website" allowfullscreen></iframe>
+    <div id="iframeBlackOverlay" class="iframe-black-overlay" aria-hidden="true"></div>
+    <div id="iframeModalContainer" class="iframe-modal-container" role="dialog" aria-modal="true" aria-label="Projects" aria-hidden="true">
+        <button id="iframeModalCloseBtn" class="iframe-modal-close" type="button" aria-label="Close projects">×</button>
+        <iframe id="websiteIframe" src="./Eyes" title="Projects" allowfullscreen></iframe>
     </div>
 
 
