@@ -4,111 +4,12 @@
     <meta charset="UTF-8" />
     <title>Page Not Found | SajagIN</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
     <link rel="shortcut icon" href="images/fav.ico" type="image/x-icon">
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        body {
-            overflow: hidden;
-            background: #87CEEB url('assets/city_parallax/10.png') center center no-repeat;
-            background-size: cover;
-            min-height: 100vh;
-            font-family: 'Syne', 'Poppins', Arial, sans-serif;
-        }
-        .center-container-404 {
-            position: relative;
-            z-index: 10;
-            min-height: 100vh;
-            width: 100vw;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-        .error-title-404 {
-            font-size: 5rem;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            color: #fff;
-            text-shadow: 0 4px 32px #2784fd, 0 0 8px #fff;
-            margin-bottom: 0.3em;
-        }
-        .error-desc-404 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #e3e9ff;
-            margin-bottom: 1.2em;
-            text-shadow: 0 2px 8px #2784fd99;
-        }
-        .error-btn-404 {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.7em;
-            padding: 0.9em 2.2em;
-            font-size: 1.15rem;
-            font-weight: 700;
-            border-radius: 18px;
-            background: rgba(39,132,253,0.18);
-            color: #fff;
-            border: 1.5px solid rgba(255,255,255,0.18);
-            text-decoration: none;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18), 0 1.5px 8px 0 rgba(255,255,255,0.12) inset;
-            -webkit-backdrop-filter: blur(8px);
-            backdrop-filter: blur(8px);
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s, border 0.2s;
-            cursor: pointer;
-            margin-bottom: 2em;
-            letter-spacing: 0.03em;
-        }
-        .error-btn-404:hover, .error-btn-404:focus {
-            background: #2784fd;
-            color: #fff;
-            box-shadow: 0 12px 32px 0 #2784fd99, 0 2px 12px 0 #fff2 inset;
-            border: 1.5px solid #fff;
-        }
-        .error-contact-404 {
-            font-size: 1.08rem;
-            color: #e3e9ff;
-            margin-top: 1.5em;
-            background: rgba(39, 132, 253, 0.18);
-            border-radius: 12px;
-            padding: 1em 2em;
-            display: inline-block;
-            box-shadow: 0px 0px 15px #2784fd44;
-            font-weight: 500;
-        }
-        .error-contact-404 a {
-            color: #2784fd;
-            text-decoration: underline;
-            font-weight: 700;
-            transition: color 0.2s;
-        }
-        .error-contact-404 a:hover {
-            color: #fff;
-            text-shadow: 0 0 8px #2784fd;
-        }
-        @media (max-width: 600px) {
-            .error-title-404 { font-size: 2.7rem; }
-            .error-desc-404 { font-size: 1.1rem; }
-            .error-btn-404 { font-size: 1rem; padding: 0.8em 1.2em; }
-            .center-container-404 { padding: 0 10px; }
-        }
-    </style>
+    <link rel="stylesheet" href="styles/styles.css">
 </head>
 <body>
-    <div class="overlay"></div>
-    <div class="center-container-404">
-        <div class="error-title-404">404</div>
-        <div class="error-desc-404">
-            Lost in the cityscape.<br>
-            The page you’re looking for doesn’t exist.
-        </div>
-        <a href="index.html" class="error-btn-404">← Back to Home</a>
-        <div class="error-contact-404">
-            Need help or want to connect?<br>
-            <a href="mailto:web.codewhite@gmail.com">web.codewhite@gmail.com</a>
-        </div>
-    </div>
+    <h1>404 - Page Not Found</h1>
+    <p>The page you are looking for does not exist.</p>
+    <a href="index.html">Go back to the homepage</a>
 </body>
 </html>

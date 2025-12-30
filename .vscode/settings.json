@@ -1,0 +1,15 @@
+{
+  "files.exclude": {
+    "sitemap.xml": true,
+    "robots.txt": true,
+    "manifest.json": true,
+    "LICENSE": true,
+    "google489e48d6f8807a03.html": true,
+    "CNAME": true,
+    "404.md": true,
+    ".hintrc": true,
+    "resume.tex": true,
+    "resume.pdf": true,
+    ".gitignore": true
+  }
+}
