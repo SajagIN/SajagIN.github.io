@@ -3,9 +3,9 @@
   "short_name": "SajagIN",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#87CEEB",
-  "theme_color": "#87CEEB",
-  "description": "Portfolio and projects of Sajag Kamthan, Full Stack Developer, Programmer & Creator.",
+  "background_color": "#87ceeb",
+  "theme_color": "#87ceeb",
+  "description": "Portfolio of Sajag Kamthan, full stack developer and programmer.",
   "icons": [
     {
       "src": "images/fav.ico",

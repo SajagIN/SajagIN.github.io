@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
-Sitemap: https://SajagIN.thedev.id/sitemap.xml
+
+Sitemap: https://sajagin.thedev.id/sitemap.xml

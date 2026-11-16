@@ -72,3 +72,6 @@
 *.xdv
 WARP.md
 hint-report
+.hintrc
+.vscode/
+.vscode/settings.json
