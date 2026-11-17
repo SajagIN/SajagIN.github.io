@@ -16,6 +16,5 @@ I'm **Sajag Kamthan**, a passionate Full Stack Developer from India.
 
 - [GitHub](https://github.com/sajagin)
 - [LinkedIn](https://linkedin.com/in/sajagin)
-- [Twitter/X](https://twitter.com/sajagin)
 
 ---

@@ -1,21 +1,22 @@
 {
   "name": "Sajag Kamthan Portfolio",
   "short_name": "SajagIN",
-  "start_url": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#87ceeb",
-  "theme_color": "#87ceeb",
+  "background_color": "#ece9d8",
+  "theme_color": "#0054e3",
   "description": "Portfolio of Sajag Kamthan, full stack developer and programmer.",
   "icons": [
     {
-      "src": "images/fav.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "./assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
     },
     {
-      "src": "images/metapic.avif",
+      "src": "./assets/icon-512.png",
       "sizes": "512x512",
-      "type": "image/avif"
+      "type": "image/png"
     }
   ]
 }
