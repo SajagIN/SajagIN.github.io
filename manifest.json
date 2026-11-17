@@ -1,22 +1,27 @@
 {
-  "name": "Sajag Kamthan Portfolio",
+  "id": "./",
+  "name": "Sajag Kamthan | Full Stack Developer",
   "short_name": "SajagIN",
+  "description": "Portfolio of Sajag Kamthan, a full stack developer and programmer from India. View his résumé or get in touch.",
+  "lang": "en",
+  "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#ece9d8",
   "theme_color": "#0054e3",
-  "description": "Portfolio of Sajag Kamthan, full stack developer and programmer.",
   "icons": [
     {
       "src": "./assets/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "./assets/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
