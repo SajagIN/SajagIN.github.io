@@ -1,11 +1,11 @@
 # Sajag Kamthan
 
-> Sajag Kamthan is a full stack developer and programmer from India. His portfolio is being refreshed.
+> Sajag Kamthan is a full stack developer and programmer from India. His portfolio is being rebuilt.
 
 ## Website
 
-- [Portfolio](https://sajagin.thedev.id/): Introduction and contact form.
-- [Résumé](https://sajagin.thedev.id/resume.pdf): Résumé in PDF format.
+- [Portfolio](https://sajagin.thedev.id/): Introduction, résumé, and contact form.
+- [Résumé](https://sajagin.thedev.id/Resume.pdf): Résumé in PDF format.
 
 ## Profiles
 

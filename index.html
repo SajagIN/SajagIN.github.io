@@ -159,6 +159,14 @@
         .contact-heading { border-color: #c8c5b8; }
         .site-notice { background: #f5f4ed; border-color: #aca899; border-radius: 0; }
         .site-notice strong { color: #222; }
+        /* Readability and touch targets while retaining the XP appearance. */
+        #about .intro, .contact-copy, .site-notice { font-size: 14px; line-height: 1.55; }
+        .form-help { font-size: 12px; color: #444; margin: 0 0 12px; }
+        @media (max-width: 680px) {
+            .menu a { padding: 10px 8px; }
+            .button, button { min-height: 44px; }
+            .resume-actions .button, .resume-actions button { flex: 1 1 160px; }
+        }
     </style>
     <script type="application/ld+json">
 {
@@ -183,6 +191,20 @@
       "url": "https://sajagin.thedev.id/",
       "name": "Sajag Kamthan Portfolio",
       "publisher": {
+        "@id": "https://sajagin.thedev.id/#person"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://sajagin.thedev.id/#webpage",
+      "url": "https://sajagin.thedev.id/",
+      "name": "Sajag Kamthan | Full Stack Developer & Programmer",
+      "description": "Portfolio of Sajag Kamthan, a full stack developer and programmer from India.",
+      "inLanguage": "en",
+      "isPartOf": {
+        "@id": "https://sajagin.thedev.id/#website"
+      },
+      "about": {
         "@id": "https://sajagin.thedev.id/#person"
       }
     }
@@ -215,14 +237,15 @@
                     <section class="panel" id="about" aria-labelledby="name">
                         <h1 id="name">Sajag Kamthan</h1>
                         <p class="role">Full Stack Developer &amp; Programmer</p>
-                        <p class="intro">I build for the web and learn by making things. Take a look around, or say hello.</p>
+                        <p class="intro">I’m a full stack developer and programmer from India. I build for the web and learn by making things. Take a look around, or say hello.</p>
                         <p class="status"><span class="status-dot" aria-hidden="true"></span> More work coming soon</p>
                         <div class="link-row"><a href="https://github.com/SajagIN">GitHub ↗</a><a href="https://www.linkedin.com/in/sajagin/">LinkedIn ↗</a><a href="#contact">Get in touch ↓</a></div>
                         <section id="resume" aria-labelledby="resume-heading">
                             <h2 class="section-title" id="resume-heading">Résumé</h2>
                             <div class="resume-actions">
-                                <button type="button" id="resume-toggle" aria-expanded="false" aria-controls="resume-panel">View résumé</button>
+                                <button type="button" id="resume-toggle" aria-expanded="false" aria-controls="resume-panel" hidden>View résumé</button>
                                 <a class="button" href="./Resume.pdf" download>Download résumé</a>
+                                <noscript><a class="button" href="./Resume.pdf">Open résumé</a></noscript>
                             </div>
                             <div class="resume-panel" id="resume-panel" hidden>
                                 <iframe class="resume-viewer" title="Sajag Kamthan's résumé" data-src="./Resume.pdf" loading="lazy"></iframe>
@@ -234,6 +257,7 @@
                         <div class="contact-heading"><span class="contact-icon" aria-hidden="true">✉</span><h2 id="contact-heading">Contact me</h2></div>
                         <p class="contact-copy">Have an idea? Let’s talk. Email me at <a href="mailto:sajag1403@gmail.com">sajag1403@gmail.com</a>.</p>
                         <form action="https://formsubmit.co/sajag1403@gmail.com" method="POST">
+                            <p class="form-help">All fields are required.</p>
                             <input type="hidden" name="_captcha" value="false">
                             <input type="hidden" name="_template" value="table">
                             <label for="email">Your email</label>
@@ -257,6 +281,7 @@
     <script>
         const resumeToggle = document.getElementById('resume-toggle');
         const resumePanel = document.getElementById('resume-panel');
+        resumeToggle.hidden = false;
         resumeToggle.addEventListener('click', () => {
             const isOpen = resumeToggle.getAttribute('aria-expanded') === 'true';
             resumeToggle.setAttribute('aria-expanded', String(!isOpen));
