@@ -1,0 +1,12 @@
+{
+  "site_url": "https://sajagin.thedev.id",
+  "site_name": "Sajag Kamthan Portfolio",
+  "author": "Sajag Kamthan",
+  "description": "Portfolio of Sajag Kamthan, a full stack developer and programmer from India.",
+  "social_image": "https://sajagin.thedev.id/assets/social-preview.jpg",
+  "profiles": ["https://github.com/SajagIN", "https://www.linkedin.com/in/sajagin/"],
+  "pages": {
+    "/": {"title": "Sajag Kamthan | Full Stack Developer & Programmer", "description": "Portfolio of Sajag Kamthan, a full stack developer and programmer from India."},
+    "/projects/": {"title": "Projects | Sajag Kamthan", "description": "Explore projects built by Sajag Kamthan."}
+  }
+}
